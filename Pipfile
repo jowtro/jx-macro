@@ -1,0 +1,43 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+astroid = "*"
+autopep8 = "*"
+flake8 = "*"
+isort = "*"
+lazy-object-proxy = "*"
+mccabe = "*"
+mouseinfo = "*"
+numpy = "*"
+opencv-python = "*"
+pillow = "*"
+playsound= "==1.2.2"
+pyautogui = "*"
+pycodestyle = "*"
+pyflakes = "*"
+pygetwindow = "*"
+pylint = "*"
+pymsgbox = "*"
+pynput = "*"
+pyperclip = "*"
+pyrect = "*"
+pyscreeze = "*"
+python-imageseach-drov0 = "*"
+python-xlib = "*"
+python3-xlib = "*"
+pytweening = "*"
+six = "*"
+toml = "*"
+wrapt = "*"
+
+[dev-packages]
+black = "*"
+
+[requires]
+python_version = "3.11"
+
+[pipenv]
+allow_prereleases = true
