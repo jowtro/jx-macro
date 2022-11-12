@@ -79,15 +79,15 @@ class ActionForm:
         self.add_action(click)
         self.position_str = f"[{str(x).rjust(4)},{str(y).rjust(4)}]"
 
-    def tk_on_click_save(self, event):
+    def tk_on_click_save(self):
         self.write_to_file()
 
-    def tk_on_click_play(self, event):
+    def tk_on_click_play(self):
         print("Play")
         self.read_macro()
         self.play_macro()
 
-    def tk_on_click_clear(self, event):
+    def tk_on_click_clear(self):
         self.actions_list = []
         self.position_str = ""
         print("Clear Macro")
@@ -146,43 +146,41 @@ if __name__ == "__main__":
     root = tk.Tk(className="JXTECH")
     root.geometry("400x200")
     action_ui = ActionForm()
-    
-    #panel
+
+    # panel
     top_pane = tk.PanedWindow(root, background="#99fb99")
     main = tk.PanedWindow(root, background="#99fb99")
     bottom_pane = tk.PanedWindow(root, background="#cccb99")
-    
+
     listbox_entries = []
     scrollbar = Scrollbar(root)
     listbox_widget = Listbox(root, yscrollcommand=scrollbar.set)
     listbox_widget.pack(side="top", fill="x")
     top_pane.add(listbox_widget)
-   
-    
+
     bottom_pane.columnconfigure(0, weight=3)
     bottom_pane.columnconfigure(1, weight=2)
     bottom_pane.columnconfigure(2, weight=2)
-    
+
     # BTN SAVE
-    btn_save = ttk.Button(root, text="Save Macro")
+    btn_save = ttk.Button(root, text="Save Macro", command=action_ui.tk_on_click_save)
     btn_save.grid(
         column=0,
         row=1,
         sticky=tk.S,
     )
-    btn_save.bind("<Button-1>", action_ui.tk_on_click_save)
+    # bind is when you want to select a specific listener like the left or right mouse button
+    # btn_save.bind("<Button-1>", action_ui.tk_on_click_save)
     action_ui.btn_save = btn_save
     # PLAY
-    btn_play = ttk.Button(root, text="Play Macro")
-    btn_play.bind("<Button-1>", action_ui.tk_on_click_play)
+    btn_play = ttk.Button(root, text="Play Macro", command=action_ui.tk_on_click_play)
     btn_play.grid(
         column=1,
         row=1,
         sticky=tk.S,
     )
 
-    btn_clear = ttk.Button(root, text="Clear")
-    btn_clear.bind("<Button-1>", action_ui.tk_on_click_clear)
+    btn_clear = ttk.Button(root, text="Clear", command=action_ui.tk_on_click_clear)
     btn_clear.grid(
         column=2,
         row=1,
@@ -194,7 +192,7 @@ if __name__ == "__main__":
 
     label = Label(root, textvariable=msg)
     scrollbar.config(command=listbox_widget.yview)
-    
+
     bottom_pane.add(btn_save)
     bottom_pane.add(btn_play)
     bottom_pane.add(btn_clear)
@@ -206,8 +204,7 @@ if __name__ == "__main__":
     root.grid_columnconfigure(0, weight=1)
     top_pane.grid(row=0, column=0, sticky="ew")
     main.grid(row=1, column=0, sticky="nsew")
-    
-    
+
     keyboard_listener = keyboard.Listener(on_release=action_ui.on_release)
     keyboard_listener.start()
     mouse_listener = mouse.Listener(on_click=action_ui.on_click)
