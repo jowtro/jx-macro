@@ -155,27 +155,15 @@ class ActionForm:
 
         if not self.record:
             return
-        # FIX ME ignore whole app window instead of one button
-        btnx, btny = self.btn_save.winfo_rootx(), self.btn_save.winfo_rooty()
-        btn_size_x = self.btn_save.winfo_width()
-        btn_size_y = self.btn_save.winfo_height()
-        print(
-            f"{x} > {btnx} and {x} < ({btnx + btn_size_x}) and {y} > {btny} and {y} < ({btny + btn_size_y})"
-        )
-        print("size")
-        print(btn_size_x, btn_size_y)
-        print(f"btnx {btnx} btny {btny}")
-        print(x > btnx)
-        print(x < (x + btn_size_x))
-        print(y > btny)
-        print(y < (y + btn_size_y))
-        # if cursor is inside save btn 
-        # TODO IGNORE WHOLE TK WINDOW
+        wndx, wndy = self.root.winfo_rootx(), self.root.winfo_rooty()
+        wnd_w = self.root.winfo_width()
+        wnd_h = self.root.winfo_height()
+        #IGNORE CLICK ON THE WHOLE TK WINDOW
         if (
-            x > btnx
-            and x < (btnx + btn_size_x)
-            and y > btny
-            and y < (btny + btn_size_y)
+            x > wndx
+            and x < (wndx + wnd_w)
+            and y > wndy
+            and y < (wndy + wnd_h)
         ):
             print("ignore button save click")
             return
