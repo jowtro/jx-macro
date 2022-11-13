@@ -7,7 +7,7 @@ class Interval(object):
     def __init__(self, interval=120):
         """
         Args:
-            interval (int, optional): interval on which the function will be called in seconds. Defaults to 120.
+            interval (int, optional): interval on which the function will be allowed to run. Defaults to 120.
         """
         self.interval = interval
         self.time_to_act = datetime.now() - timedelta(0, self.interval )
