@@ -1,41 +1,19 @@
-#! python3
 import json
 import time
 import tkinter as tk
-from tkinter import Label, Listbox, PhotoImage, Scrollbar, StringVar
+from tkinter import BOTH, Label, Listbox, PhotoImage, Scrollbar, StringVar
 from tkinter import filedialog as fd
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
 from typing import List
 
 import pyautogui
-from pyautogui import sleep
 from pynput import keyboard, mouse
 
 from classes.action import Action
+from classes.action_ui import ActionUI
+from classes.my_click import MyClick
 from helper.file_helper import parse_path
-
-
-class Pos:
-    def __init__(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
-
-
-class ActionUI(Pos):
-    def __init__(self, x: int, y: int) -> None:
-        super().__init__(x, y)
-        self.step_no = None
-
-    def to_dict(self) -> str:
-        return super().__dict__
-
-
-class MyClick(ActionUI):
-    def __init__(self, x: int, y: int, button: mouse.Button, pressed: bool) -> None:
-        super().__init__(x, y)
-        self.button = button.name
-        self.is_pressed = pressed
 
 
 class ActionForm:
@@ -50,6 +28,7 @@ class ActionForm:
         self.playing = False
         self.cnt = 1
         self.iterations = 2
+        self.speed = 1
 
     def inc_steps(self):
         """increment steps by 1"""
@@ -78,7 +57,9 @@ class ActionForm:
         btnx, btny = self.btn_save.winfo_rootx(), self.btn_save.winfo_rooty()
         btn_size_x = self.btn_save.winfo_width()
         btn_size_y = self.btn_save.winfo_height()
-        print(f"{x} > {btnx} and {x} < ({btnx + btn_size_x}) and {y} > {btny} and {y} < ({btny + btn_size_y})")
+        print(
+            f"{x} > {btnx} and {x} < ({btnx + btn_size_x}) and {y} > {btny} and {y} < ({btny + btn_size_y})"
+        )
         print("size")
         print(btn_size_x, btn_size_y)
         print(f"btnx {btnx} btny {btny}")
@@ -87,16 +68,19 @@ class ActionForm:
         print(y > btny)
         print(y < (y + btn_size_y))
         # if cursor is inside save btn
-        if x > btnx and x < (btnx + btn_size_x) and y > btny and y < (btny + btn_size_y):
+        if (
+            x > btnx
+            and x < (btnx + btn_size_x)
+            and y > btny
+            and y < (btny + btn_size_y)
+        ):
             print("ignore button save click")
             return
-        
 
         print("add to list")
         click = MyClick(x, y, button, pressed)
         self.add_action(click)
         self.position_str = f"Click [{str(x).rjust(4)},{str(y).rjust(4)}]"
-        
 
     def tk_on_click_save(self):
         self.write_to_file()
@@ -123,20 +107,7 @@ class ActionForm:
             print("no file selected")
 
         self.read_macro()
-        """  filetypes = (
-            ('text files', '*.txt'),
-            ('All files', '*.*')
-        )
-
-        filename = fd.askopenfilename(
-            title='Open a file',
-            initialdir='/',
-            filetypes=filetypes)
-
-        showinfo(
-            title='Selected File',
-            message=filename
-        ) """
+  
 
     def add_action(self, action: ActionUI):
         self.inc_steps()
@@ -176,7 +147,7 @@ class ActionForm:
                 break
             for a in self.actions_list:
                 print(f"step: {a.step_no}")
-                action_gui.go_click(a.x, a.y, 2, pyautogui.easeInBack)
+                action_gui.go_click(a.x, a.y, self.speed, pyautogui.easeInBack)
             self.cnt += 1
             print(f"macro cnt {self.cnt}/{self.iterations}")
         time.sleep(0.5)
@@ -224,17 +195,26 @@ if __name__ == "__main__":
     root = tk.Tk(className="JXTECH")
     root.resizable(False, False)
 
-    root.geometry("400x200")
+    root.geometry("400x245")
     action_ui = ActionForm()
-
+    
+    my_notebook= ttk.Notebook(root)
+    my_notebook.pack(expand=1,fill=BOTH)
+    #Create Tabs
+    macro_tab= ttk.Frame(my_notebook)
+    my_notebook.add(macro_tab, text= "Macro")
+    
+    tab2= ttk.Frame(my_notebook)
+    my_notebook.add(tab2, text= "Settings")
+    
     # panel
-    top_pane = tk.PanedWindow(root, background="#99fb99")
-    main = tk.PanedWindow(root, background="#99fb99")
-    bottom_pane = tk.PanedWindow(root, background="#cccb99")
+    top_pane = tk.PanedWindow(macro_tab, background="#99fb99")
+    main = tk.PanedWindow(macro_tab, background="#99fb99")
+    bottom_pane = tk.PanedWindow(macro_tab, background="#cccb99")
 
     listbox_entries = []
-    scrollbar = Scrollbar(root)
-    listbox_widget = Listbox(root, yscrollcommand=scrollbar.set)
+    scrollbar = Scrollbar(macro_tab)
+    listbox_widget = Listbox(macro_tab, yscrollcommand=scrollbar.set)
     listbox_widget.pack(side="top", fill="x")
     top_pane.add(listbox_widget)
 
@@ -245,7 +225,7 @@ if __name__ == "__main__":
     bottom_pane.columnconfigure(4, weight=2)
 
     # BTN SAVE
-    btn_save = ttk.Button(root, text="Save Macro", command=action_ui.tk_on_click_save)
+    btn_save = ttk.Button(macro_tab, text="Save Macro", command=action_ui.tk_on_click_save)
     btn_save.grid(
         column=0,
         row=1,
@@ -255,14 +235,14 @@ if __name__ == "__main__":
     # btn_save.bind("<Button-1>", action_ui.tk_on_click_save)
     action_ui.btn_save = btn_save
     # PLAY
-    btn_play = ttk.Button(root, text="Play Macro", command=action_ui.tk_on_click_play)
+    btn_play = ttk.Button(macro_tab, text="Play Macro", command=action_ui.tk_on_click_play)
     btn_play.grid(
         column=1,
         row=1,
         sticky=tk.S,
     )
     btn_load_macro = ttk.Button(
-        root, text="Load Macro", command=action_ui.tk_on_click_load
+        macro_tab, text="Load Macro", command=action_ui.tk_on_click_load
     )
     btn_load_macro.grid(
         column=2,
@@ -271,7 +251,7 @@ if __name__ == "__main__":
     )
     rec_image = PhotoImage(file=parse_path("./src/assets/record.png"))
     btn_record = ttk.Button(
-        root, text="Rec", command=lambda: action_ui.set_record_ON(), image=rec_image
+        macro_tab, text="Rec", command=lambda: action_ui.set_record_ON(), image=rec_image
     )
     btn_record.grid(
         column=3,
@@ -279,17 +259,13 @@ if __name__ == "__main__":
         sticky=tk.S,
     )
 
-    btn_clear = ttk.Button(root, text="Clear", command=action_ui.tk_on_click_clear)
+    btn_clear = ttk.Button(macro_tab, text="Clear", command=action_ui.tk_on_click_clear)
     btn_clear.grid(
         column=4,
         row=1,
         sticky=tk.S,
     )
 
-    msg = StringVar()
-    msg.set(f"Press any key to record x,y pos")
-
-    label = Label(root, textvariable=msg)
     scrollbar.config(command=listbox_widget.yview)
 
     bottom_pane.add(btn_save)
