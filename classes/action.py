@@ -1,7 +1,5 @@
 from classes.macro import Macro
 import pyautogui
-from pyautogui import alert, sleep
-from datetime import datetime, timedelta
 from python_imagesearch.imagesearch import imagesearch
 
 from helper.file_helper import parse_path
