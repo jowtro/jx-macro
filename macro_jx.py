@@ -150,7 +150,7 @@ class ActionForm:
             print(ex)
 
     def on_click(self, x, y, button: mouse.Button, pressed: bool) -> None:
-        if not pressed: # avoid on release
+        if not pressed:  # avoid on release
             return
 
         if not self.record:
@@ -158,14 +158,8 @@ class ActionForm:
         wndx, wndy = self.root.winfo_rootx(), self.root.winfo_rooty()
         wnd_w = self.root.winfo_width()
         wnd_h = self.root.winfo_height()
-        #IGNORE CLICK ON THE WHOLE TK WINDOW
-        if (
-            x > wndx
-            and x < (wndx + wnd_w)
-            and y > wndy
-            and y < (wndy + wnd_h)
-        ):
-            print("ignore button save click")
+        # IGNORE CLICK ON THE WHOLE TK WINDOW
+        if x > wndx and x < (wndx + wnd_w) and y > wndy and y < (wndy + wnd_h):
             return
 
         print("add to list")
@@ -207,7 +201,7 @@ class ActionForm:
 
     def write_to_file(self):
         with open("teste.json", "w") as f:
-            aux_ist = [x.to_dict() for x in self.actions_list]
+            aux_ist = [x for x in self.actions_list]
             json_file = dict(steps=aux_ist)
             f.write(json.dumps(json_file))
 
@@ -224,11 +218,13 @@ class ActionForm:
             # READ
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
-                self.actions_list = self.actions_list_from(self.macro)
+                self.actions_list = [x for x in self.macro["steps"]]
                 # populate listbox
                 for a in self.actions_list:
-                    position_str = f"Click [{str(a.x).rjust(4)},{str(a.y).rjust(4)}]"
-                    self.listbox_widget.insert(tk.END, position_str)
+                    listbox_entry = "Click [{},{}]".format(
+                        str(a["x"]).rjust(4), str(a["y"]).rjust(4)
+                    )
+                    self.listbox_widget.insert(tk.END, listbox_entry)
         else:
             showerror(title="No file selected yet.", message="File not Loaded.")
             return
