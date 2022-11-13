@@ -1,7 +1,7 @@
 import json
 import time
 import tkinter as tk
-from tkinter import BOTH, Listbox, PhotoImage, Scrollbar
+from tkinter import BOTH, END, Listbox, PhotoImage, Scrollbar
 from tkinter import filedialog as fd
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo
@@ -28,10 +28,10 @@ class ActionForm:
         self.playing = False
         self.cnt = 1
         self.iterations = 2
-        self.speed = 1
+        self.speed = 0.5
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
-        self.root.geometry("400x245")
+        self.root.geometry("500x245")
         self.create_widgets()
         self.update_gui()
         self.root.mainloop()
@@ -48,19 +48,20 @@ class ActionForm:
 
         # panel
         top_pane = tk.PanedWindow(macro_tab, background="#99fb99")
+        right_pane = tk.PanedWindow(macro_tab, background="#CCCCCC")
         main = tk.PanedWindow(macro_tab, background="#99fb99")
         bottom_pane = tk.PanedWindow(macro_tab, background="#cccb99")
 
         scrollbar = Scrollbar(macro_tab)
         self.listbox_widget = Listbox(macro_tab, yscrollcommand=scrollbar.set)
-        self.listbox_widget.pack(side="top", fill="x")
-        top_pane.add(self.listbox_widget)
-
-        bottom_pane.columnconfigure(0, weight=3)
-        bottom_pane.columnconfigure(1, weight=2)
-        bottom_pane.columnconfigure(2, weight=2)
-        bottom_pane.columnconfigure(3, weight=2)
-        bottom_pane.columnconfigure(4, weight=2)
+        
+        current_value = tk.StringVar(value=0)
+        spin_box = ttk.Spinbox(
+            self.root,
+            from_=0,
+            to=30,
+            textvariable=current_value,
+            wrap=True)
 
         # BTN SAVE
         btn_save = ttk.Button(
@@ -113,18 +114,26 @@ class ActionForm:
 
         scrollbar.config(command=self.listbox_widget.yview)
 
+        # add widgets to the panes
+        top_pane.add(self.listbox_widget)
+        right_pane.add(spin_box)
+        top_pane.add(right_pane)
+        
         bottom_pane.add(btn_save)
         bottom_pane.add(btn_play)
         bottom_pane.add(btn_load_macro)
         bottom_pane.add(btn_record)
         bottom_pane.add(btn_clear)
+        
+        
         # add to main pane
         main.add(top_pane)
         main.add(bottom_pane)
         # add to assemble
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-        top_pane.grid(row=0, column=0, sticky="ew")
+        top_pane.grid(row=0, column=0, sticky="nsew")
+        right_pane.grid(row=0, column=1, sticky="ew")
         main.grid(row=1, column=0, sticky="nsew")
 
         keyboard_listener = keyboard.Listener(on_release=self.on_release)
@@ -219,6 +228,7 @@ class ActionForm:
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
                 self.actions_list = [x for x in self.macro["steps"]]
+                self.listbox_widget.delete(0,END)
                 # populate listbox
                 for a in self.actions_list:
                     listbox_entry = "Click [{},{}]".format(
@@ -236,8 +246,8 @@ class ActionForm:
             if self.cnt > self.iterations:
                 break
             for a in self.actions_list:
-                print(f"step: {a.step_no}")
-                action_gui.go_click(a.x, a.y, self.speed, pyautogui.easeInBack)
+                print("step: {}".format(a["step_no"]))
+                action_gui.go_click(a["x"], a["y"], self.speed, pyautogui.easeInBack)
             self.cnt += 1
             print(f"macro cnt {self.cnt}/{self.iterations}")
         time.sleep(0.5)
