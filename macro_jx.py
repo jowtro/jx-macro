@@ -35,7 +35,11 @@ class ActionForm:
         self.speed = 0.5
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
-        self.root.geometry("520x245")
+        if os.name == "nt":
+            self.root.geometry("520x245")
+        else:
+            self.root.geometry("635x255")
+            
         self.create_widgets()
         self.update_gui()
         self.root.mainloop()
@@ -70,7 +74,7 @@ class ActionForm:
         # region buttons
         btn_wait = tk.Button(macro_tab, text="Wait", command=self.tk_add_wait)
         btn_find_img = tk.Button(
-            macro_tab, text="Take Picture", command=self.tk_add_screenshot
+            macro_tab, text="Find image and Click", command=self.tk_add_screenshot
         )
         # BTN SAVE
         btn_save = ttk.Button(
@@ -215,7 +219,7 @@ class ActionForm:
         self.read_macro()
 
     def tk_add_wait(self):
-        secs = simpledialog.askstring("Input", "How long the script will await (seconds)?",
+        secs = simpledialog.askstring("Input", "How long the script will wait (seconds)?",
                                 parent=self.root)
         acwait = AcWait(secs)
         self.add_action(acwait)
@@ -227,7 +231,14 @@ class ActionForm:
                                     initialdir=os.getcwd(),
                                     title="Please select a file:",
                                     filetypes=my_filetypes)
-        ac_ss = AcScreenshot(screenshot_file)
+        button = simpledialog.askstring("Input", "Type which button to press when click on the picture left, right, middle.",
+                                parent=self.root)
+        
+        while button != "left" != "right" != "middle":
+            button = simpledialog.askstring("Input", "Wrong button type one of the following: left, right or middle.",
+                                parent=self.root)
+            
+        ac_ss = AcScreenshot(screenshot_file, button)
         self.add_action(ac_ss)
 
 
