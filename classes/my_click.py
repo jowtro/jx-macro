@@ -1,8 +1,8 @@
-from classes.action_ui import ActionUI
 from pynput import mouse
+from classes.mouse_ui import MouseUI
 
 
-class MyClick(ActionUI):
+class MyClick(MouseUI):
     def __init__(self, x: int, y: int, button: mouse.Button, pressed: bool) -> None:
         super().__init__(x, y)
         self.button = button.name

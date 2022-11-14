@@ -1,14 +1,18 @@
 import json
+import os
 import time
 import tkinter as tk
-from tkinter import BOTH, END, Listbox, PhotoImage, Scrollbar
+from tkinter import BOTH, BOTTOM, END, Listbox, PhotoImage, Scrollbar
 from tkinter import filedialog as fd
 from tkinter import ttk
+from tkinter import simpledialog
 from tkinter.messagebox import showerror, showinfo
 from typing import List
 
 import pyautogui
 from pynput import keyboard, mouse
+from classes.ac_screenshot import AcScreenshot
+from classes.ac_wait import AcWait
 
 from classes.action import Action
 from classes.action_ui import ActionUI
@@ -31,12 +35,13 @@ class ActionForm:
         self.speed = 0.5
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
-        self.root.geometry("500x245")
+        self.root.geometry("520x245")
         self.create_widgets()
         self.update_gui()
         self.root.mainloop()
 
     def create_widgets(self):
+        # region INIT
         my_notebook = ttk.Notebook(self.root)
         my_notebook.pack(expand=1, fill=BOTH)
         # Create Tabs
@@ -48,21 +53,25 @@ class ActionForm:
 
         # panel
         top_pane = tk.PanedWindow(macro_tab, background="#99fb99")
-        right_pane = tk.PanedWindow(macro_tab, background="#CCCCCC")
+        right_pane = tk.PanedWindow(macro_tab, background="#CCCCCC", orient="vertical")
         main = tk.PanedWindow(macro_tab, background="#99fb99")
         bottom_pane = tk.PanedWindow(macro_tab, background="#cccb99")
 
         scrollbar = Scrollbar(macro_tab)
         self.listbox_widget = Listbox(macro_tab, yscrollcommand=scrollbar.set)
-        
+        lbl_speed = tk.Label(macro_tab, text="Cursor speed")
         current_value = tk.StringVar(value=0)
         spin_box = ttk.Spinbox(
-            self.root,
-            from_=0,
-            to=30,
-            textvariable=current_value,
-            wrap=True)
+            self.root, from_=0, to=30, textvariable=current_value, wrap=True
+        )
 
+        # endregion
+
+        # region buttons
+        btn_wait = tk.Button(macro_tab, text="Wait", command=self.tk_add_wait)
+        btn_find_img = tk.Button(
+            macro_tab, text="Take Picture", command=self.tk_add_screenshot
+        )
         # BTN SAVE
         btn_save = ttk.Button(
             macro_tab, text="Save Macro", command=self.tk_on_click_save
@@ -111,21 +120,24 @@ class ActionForm:
             row=1,
             sticky=tk.S,
         )
+        # endregion
 
         scrollbar.config(command=self.listbox_widget.yview)
-
         # add widgets to the panes
         top_pane.add(self.listbox_widget)
+
+        right_pane.add(lbl_speed)
         right_pane.add(spin_box)
+        right_pane.add(btn_wait)
+        right_pane.add(btn_find_img)
         top_pane.add(right_pane)
-        
+
         bottom_pane.add(btn_save)
         bottom_pane.add(btn_play)
         bottom_pane.add(btn_load_macro)
         bottom_pane.add(btn_record)
         bottom_pane.add(btn_clear)
-        
-        
+
         # add to main pane
         main.add(top_pane)
         main.add(bottom_pane)
@@ -133,7 +145,7 @@ class ActionForm:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
         top_pane.grid(row=0, column=0, sticky="nsew")
-        right_pane.grid(row=0, column=1, sticky="ew")
+        right_pane.grid(row=0, column=1, sticky="ne", padx=5, pady=5)
         main.grid(row=1, column=0, sticky="nsew")
 
         keyboard_listener = keyboard.Listener(on_release=self.on_release)
@@ -202,15 +214,32 @@ class ActionForm:
 
         self.read_macro()
 
+    def tk_add_wait(self):
+        secs = simpledialog.askstring("Input", "How long the script will await (seconds)?",
+                                parent=self.root)
+        acwait = AcWait(secs)
+        self.add_action(acwait)
+        
+
+    def tk_add_screenshot(self):
+        my_filetypes = [('png format', '.png'), ('jpeg format', '.jpg')]
+        screenshot_file = fd.askopenfilename(parent=self.root,
+                                    initialdir=os.getcwd(),
+                                    title="Please select a file:",
+                                    filetypes=my_filetypes)
+        ac_ss = AcScreenshot(screenshot_file)
+        self.add_action(ac_ss)
+
+
     def add_action(self, action: ActionUI):
         self.inc_steps()
         action.step_no = self.no_steps
         # needs to be dict to be saved later as json
-        self.actions_list.append(action.to_dict())
+        self.actions_list.append(action)
 
     def write_to_file(self):
         with open("teste.json", "w") as f:
-            aux_ist = [x for x in self.actions_list]
+            aux_ist = [x.to_dict() for x in self.actions_list]
             json_file = dict(steps=aux_ist)
             f.write(json.dumps(json_file))
 
@@ -228,7 +257,7 @@ class ActionForm:
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
                 self.actions_list = [x for x in self.macro["steps"]]
-                self.listbox_widget.delete(0,END)
+                self.listbox_widget.delete(0, END)
                 # populate listbox
                 for a in self.actions_list:
                     listbox_entry = "Click [{},{}]".format(

@@ -1,8 +1,5 @@
-from classes.pos import Pos
-
-class ActionUI(Pos):
-    def __init__(self, x: int, y: int) -> None:
-        super().__init__(x, y)
+class ActionUI:
+    def __init__(self,) -> None:
         self.step_no = None
 
     def to_dict(self) -> str:
