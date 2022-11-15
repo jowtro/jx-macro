@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-class Macro():
+class Macro:
     """
     docstring
     """
@@ -16,7 +16,7 @@ class Macro():
 
     def set_iterations(self, val):
         self.iterations = val
-    
+
     def get_iterations(self):
         return self.iterations
 
@@ -29,5 +29,5 @@ class Macro():
     def get_time_to_act(self):
         return self.time_to_action
 
-    def set_time_to_act(self,dt):
+    def set_time_to_act(self, dt):
         self.time_to_action = dt

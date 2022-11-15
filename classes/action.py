@@ -1,6 +1,6 @@
 from classes.macro import Macro
 import pyautogui
-from python_imagesearch.imagesearch import imagesearch
+from python_imagesearch.imagesearch import imagesearch, click_image
 
 from helper.file_helper import parse_path
 
@@ -63,3 +63,27 @@ class Action(Macro):
             return True
         else:
             return False
+        
+    @staticmethod
+    def find_image_click(image_path:str, button:str,time:int, style:str):
+        """Find an image on screen
+
+        Args:
+            image_path ([str]): [file path]
+
+        Returns:
+            list[int]: [x,y]
+        """
+        pos_x, pos_y = imagesearch(parse_path(image_path))
+        if pos_x == -1:
+            return None
+        match button:
+            case "left":
+                Action.go_click(pos_x,pos_y,time,style)
+            case "right":
+                Action.go_right_click(pos_x,pos_y,time,style)
+                
+    @staticmethod
+    def wait(seconds: int):
+        pyautogui.sleep(seconds)
+        

@@ -21,6 +21,7 @@ from classes.action import Action
 from classes.action_ui import ActionUI
 from classes.my_click import MyClick
 from helper.file_helper import parse_path
+from mapper.action_map import ActionMap
 
 
 class ActionForm:
@@ -291,19 +292,26 @@ class ActionForm:
             self.actions_list = self.actions_list_from(dict(steps=self.actions_list))
             return
         elif self.macro_filename != "" or self.macro_filename is not None:
+            self.actions_list = []
             # READ
-            # FIXME
-            # TODO add functionality to ready AcWait and AcScreenshot
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
-                self.actions_list = [x for x in self.macro["steps"]]
-                #self.listbox_widget.delete(0, END)
-                # populate listbox
-                for a in self.actions_list:
-                    listbox_entry = "Click [{},{}]".format(
-                        str(a["x"]).rjust(4), str(a["y"]).rjust(4)
-                    )
-                    #self.listbox_widget.insert(tk.END, listbox_entry)
+                #self.actions_list = [x for x in self.macro["steps"]]
+                for x in self.macro["steps"]:
+                    obj = ActionMap.map(x)
+                    self.actions_list.append(obj)
+                    
+                    if isinstance(obj, AcScreenshot):
+                        img_path = Path(obj.ss_filepath)
+                        img = Image.open(img_path).resize((64, 64), Image.Resampling.LANCZOS)
+                        img = ImageTk.PhotoImage(img)
+                        self.text.image_create(tk.INSERT, padx=5, pady=5, image=img)
+                        self.text.images.append(img)  # Keep a reference.
+                        if img_path.suffix in self.image_file_extensions:
+                            self.text.insert(tk.INSERT, img_path.name+'\n')
+                            self.text.image_filenames.append(img_path)
+                            
+                    self.text.insert(tk.INSERT, f"{str(obj)}\n")
         else:
             showerror(title="No file selected yet.", message="File not Loaded.")
             return
@@ -312,11 +320,17 @@ class ActionForm:
         self.record = False
         action_gui = Action()
         while self.playing:
+            # after all iterations
             if self.cnt > self.iterations:
                 break
             for a in self.actions_list:
-                print("step: {}".format(a["step_no"]))
-                action_gui.go_click(a["x"], a["y"], self.speed, pyautogui.easeInBack)
+                if isinstance(a, AcScreenshot):
+                    action_gui.find_image_click(a.ss_filepath,a.button, self.speed, pyautogui.easeInBack)
+                if isinstance(a, MyClick):
+                    action_gui.go_click(a.x, a.y, self.speed, pyautogui.easeInBack)
+                if isinstance(a, AcWait):
+                    action_gui.wait(5)
+                
             self.cnt += 1
             print(f"macro cnt {self.cnt}/{self.iterations}")
         time.sleep(0.5)
@@ -327,17 +341,15 @@ class ActionForm:
     def actions_list_from(self, param: dict) -> List[ActionUI]:
         actions = []
         for step in param["steps"]:
-            en = None
-
             match step["button"]:
                 case "left":
-                    en = mouse.Button.left
+                    button = mouse.Button.left
                 case "middle":
-                    en = mouse.Button.middle
+                    button = mouse.Button.middle
                 case "right":
-                    en = mouse.Button.right
+                    button = mouse.Button.right
 
-            click = MyClick(step["x"], step["y"], mouse.Button(en), step["is_pressed"])
+            click = MyClick(step["x"], step["y"], button, step["is_pressed"])
             click.step_no = step["step_no"]
             actions.append(click)
         return actions
