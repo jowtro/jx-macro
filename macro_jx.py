@@ -1,12 +1,15 @@
 import json
 import os
+from pathlib import Path
 import time
 import tkinter as tk
-from tkinter import BOTH, BOTTOM, END, Listbox, PhotoImage, Scrollbar
+from tkinter import BOTH, END, WORD, Image, PhotoImage
 from tkinter import filedialog as fd
 from tkinter import ttk
 from tkinter import simpledialog
 from tkinter.messagebox import showerror, showinfo
+from tkinter.scrolledtext import ScrolledText
+from PIL import Image, ImageTk
 from typing import List
 
 import pyautogui
@@ -22,7 +25,7 @@ from helper.file_helper import parse_path
 
 class ActionForm:
     def __init__(self) -> None:
-        self.position_str = None
+        self.action_str = None
         self.actions_list = []
         self.no_steps = 0
         self.macro = None
@@ -35,11 +38,12 @@ class ActionForm:
         self.speed = 0.5
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
+        self.image_file_extensions = {'.jpg', '.png'}
         if os.name == "nt":
             self.root.geometry("520x245")
         else:
             self.root.geometry("635x255")
-            
+
         self.create_widgets()
         self.update_gui()
         self.root.mainloop()
@@ -61,8 +65,11 @@ class ActionForm:
         main = tk.PanedWindow(macro_tab, background="#99fb99")
         bottom_pane = tk.PanedWindow(macro_tab, background="#cccb99")
 
-        scrollbar = Scrollbar(macro_tab)
-        self.listbox_widget = Listbox(macro_tab, yscrollcommand=scrollbar.set)
+        self.text = ScrolledText(macro_tab, width=40, height=10, wrap=WORD)
+        self.text.grid(row=2, column=0, padx=10, pady=10)
+        self.text.image_filenames = []
+        self.text.images = []
+
         lbl_speed = tk.Label(macro_tab, text="Cursor speed")
         current_value = tk.StringVar(value=0)
         spin_box = ttk.Spinbox(
@@ -126,9 +133,8 @@ class ActionForm:
         )
         # endregion
 
-        scrollbar.config(command=self.listbox_widget.yview)
         # add widgets to the panes
-        top_pane.add(self.listbox_widget)
+        top_pane.add(self.text)
 
         right_pane.add(lbl_speed)
         right_pane.add(spin_box)
@@ -190,7 +196,6 @@ class ActionForm:
         print("add to list")
         click = MyClick(x, y, button, pressed)
         self.add_action(click)
-        self.position_str = f"Click [{str(x).rjust(4)},{str(y).rjust(4)}]"
 
     def tk_on_click_save(self):
         self.write_to_file()
@@ -203,8 +208,10 @@ class ActionForm:
         self.play_macro()
 
     def tk_on_click_clear(self):
+        self.text.delete("1.0", END)  # Clear current contents.
+        self.text.images.clear()
         self.actions_list = []
-        self.position_str = ""
+        self.action_str = ""
         self.no_steps = 0
         print("Clear Macro")
 
@@ -219,34 +226,54 @@ class ActionForm:
         self.read_macro()
 
     def tk_add_wait(self):
-        secs = simpledialog.askstring("Input", "How long the script will wait (seconds)?",
-                                parent=self.root)
+        secs = simpledialog.askstring(
+            "Input", "How long the script will wait (seconds)?", parent=self.root
+        )
         acwait = AcWait(secs)
         self.add_action(acwait)
-        
 
     def tk_add_screenshot(self):
-        my_filetypes = [('png format', '.png'), ('jpeg format', '.jpg')]
-        screenshot_file = fd.askopenfilename(parent=self.root,
-                                    initialdir=os.getcwd(),
-                                    title="Please select a file:",
-                                    filetypes=my_filetypes)
-        button = simpledialog.askstring("Input", "Type which button to press when click on the picture left, right, middle.",
-                                parent=self.root)
-        
-        while button != "left" != "right" != "middle":
-            button = simpledialog.askstring("Input", "Wrong button type one of the following: left, right or middle.",
-                                parent=self.root)
-            
-        ac_ss = AcScreenshot(screenshot_file, button)
-        self.add_action(ac_ss)
+        my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
+        screenshot_file = Path(
+            fd.askopenfilename(
+                parent=self.root,
+                initialdir=os.getcwd(),
+                title="Please select a file:",
+                filetypes=my_filetypes,
+            )
+        )
+        button = simpledialog.askstring(
+            "Input",
+            "Type which button to press when click on the picture left, right, middle.",
+            parent=self.root,
+        )
 
+        while button != "left" != "right" != "middle":
+            button = simpledialog.askstring(
+                "Input",
+                "Wrong button type one of the following: left, right or middle.",
+                parent=self.root,
+            )
+
+        ac_ss = AcScreenshot(str(screenshot_file), button)
+        self.add_action(ac_ss)
+        
+        # Add image to Scrolltext
+        img = Image.open(screenshot_file).resize((64, 64), Image.Resampling.LANCZOS)
+        img = ImageTk.PhotoImage(img)
+        self.text.image_create(tk.INSERT, padx=5, pady=5, image=img)
+        self.text.images.append(img)  # Keep a reference.
+        self.text.insert(tk.INSERT, '\n')
+        if screenshot_file.suffix in self.image_file_extensions:
+            self.text.insert(tk.INSERT, screenshot_file.name+'\n')
+            self.text.image_filenames.append(screenshot_file)
 
     def add_action(self, action: ActionUI):
         self.inc_steps()
         action.step_no = self.no_steps
         # needs to be dict to be saved later as json
         self.actions_list.append(action)
+        self.text.insert(tk.INSERT, f"\n{str(action)}")
 
     def write_to_file(self):
         with open("teste.json", "w") as f:
@@ -265,16 +292,18 @@ class ActionForm:
             return
         elif self.macro_filename != "" or self.macro_filename is not None:
             # READ
+            # FIXME
+            # TODO add functionality to ready AcWait and AcScreenshot
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
                 self.actions_list = [x for x in self.macro["steps"]]
-                self.listbox_widget.delete(0, END)
+                #self.listbox_widget.delete(0, END)
                 # populate listbox
                 for a in self.actions_list:
                     listbox_entry = "Click [{},{}]".format(
                         str(a["x"]).rjust(4), str(a["y"]).rjust(4)
                     )
-                    self.listbox_widget.insert(tk.END, listbox_entry)
+                    #self.listbox_widget.insert(tk.END, listbox_entry)
         else:
             showerror(title="No file selected yet.", message="File not Loaded.")
             return
@@ -321,12 +350,20 @@ class ActionForm:
         self.record = False
 
     def update_gui(self):
+        """
+        self.text.insert(INSERT, image_file_path.name+'\n')
+        self.text.image_create(INSERT, padx=5, pady=5, image=img)
+        self.text.images.append(img)  # Keep a reference.
+        self.text.insert(INSERT, '\n')
+        """
         if len(self.actions_list) == 0:
-            self.listbox_widget.delete(0, tk.END)
+            # Clear current contents.
+            self.text.delete("1.0", tk.END)
 
-        if self.position_str != "" and self.record:
-            self.listbox_widget.insert(tk.END, self.position_str)
-        self.position_str = ""
+        # if self.action_str != "" and self.record:
+        #    self.text.insert(tk.INSERT, self.action_str+"\n")
+
+        self.action_str = ""
         self.root.after(100, self.update_gui)
 
 

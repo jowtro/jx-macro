@@ -7,3 +7,6 @@ class MyClick(MouseUI):
         super().__init__(x, y)
         self.button = button.name
         self.is_pressed = pressed
+        
+    def __str__(self) -> str:
+        return f"Click [{str(self.x)},{str(self.y)}]"
