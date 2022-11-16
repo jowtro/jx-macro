@@ -25,7 +25,7 @@ class Action(Macro):
             time ([int]): eg:. 2 seconds
             style ([pyautogui.function]): eg:.pyautogui.easeInBack
         """
-        pyautogui.moveTo(pos_x, pos_y, time, style)
+        pyautogui.moveTo(pos_x+5, pos_y+5, time, style)
         pyautogui.click()
 
     @staticmethod

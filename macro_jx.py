@@ -39,11 +39,13 @@ class ActionForm:
         self.speed = 0.5
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
-        self.image_file_extensions = {'.jpg', '.png'}
+        self.image_file_extensions = {".jpg", ".png"}
         if os.name == "nt":
             self.root.geometry("520x245")
         else:
             self.root.geometry("635x255")
+        self.my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
+        self.my_filetypes2 = [("JSON format", ".json")]
 
         self.create_widgets()
         self.update_gui()
@@ -57,8 +59,24 @@ class ActionForm:
         macro_tab = ttk.Frame(my_notebook)
         my_notebook.add(macro_tab, text="Macro")
 
-        tab2 = ttk.Frame(my_notebook)
-        my_notebook.add(tab2, text="Settings")
+        settings_tab = ttk.Frame(my_notebook)
+        my_notebook.add(settings_tab, text="Settings")
+
+        # Settings Tab
+        settings_panel = tk.PanedWindow(settings_tab, background="#CCCCCC")
+        settings_btn_panel = tk.PanedWindow(settings_tab, background="#CCCCCC")
+        settings_tab.grid_rowconfigure(1, weight=1)
+        settings_tab.grid_columnconfigure(2, weight=1)
+        btn_save_settings = ttk.Button(
+            settings_tab, text="Save Settings", command=lambda: print("Save Settings")
+        )
+        btn_save_settings.grid(
+            column=0,
+            row=0,
+            sticky=tk.S,
+        )
+        lbl_ite = tk.Label(settings_panel, text="Iterations")
+        txt_iter = tk.Entry(settings_panel)
 
         # panel
         top_pane = tk.PanedWindow(macro_tab, background="#99fb99")
@@ -134,6 +152,11 @@ class ActionForm:
         )
         # endregion
 
+        # SETTINGS PANEL
+        settings_panel.add(lbl_ite)
+        settings_panel.add(txt_iter)
+        #btn panel
+        settings_btn_panel.add(btn_save_settings)
         # add widgets to the panes
         top_pane.add(self.text)
 
@@ -155,6 +178,8 @@ class ActionForm:
         # add to assemble
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
+        settings_panel.grid(row=0, column=0, sticky="nsew")
+        settings_btn_panel.grid(row=1, column=0, sticky="sw")
         top_pane.grid(row=0, column=0, sticky="nsew")
         right_pane.grid(row=0, column=1, sticky="ne", padx=5, pady=5)
         main.grid(row=1, column=0, sticky="nsew")
@@ -234,19 +259,22 @@ class ActionForm:
         self.add_action(acwait)
 
     def tk_add_screenshot(self):
-        my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
-        screenshot_file = Path(
-            fd.askopenfilename(
-                parent=self.root,
-                initialdir=os.getcwd(),
-                title="Please select a file:",
-                filetypes=my_filetypes,
-            )
+        file_dialog = fd.askopenfilename(
+            parent=self.root,
+            initialdir=os.getcwd(),
+            title="Please select a file:",
+            filetypes=self.my_filetypes,
         )
+        if not file_dialog:
+            return
+
+        screenshot_file = Path(file_dialog)
+
         button = simpledialog.askstring(
             "Input",
             "Type which button to press when click on the picture left, right, middle.",
             parent=self.root,
+            initialvalue="left",
         )
 
         while button != "left" != "right" != "middle":
@@ -258,15 +286,15 @@ class ActionForm:
 
         ac_ss = AcScreenshot(str(screenshot_file), button)
         self.add_action(ac_ss)
-        
+
         # Add image to Scrolltext
         img = Image.open(screenshot_file).resize((64, 64), Image.Resampling.LANCZOS)
         img = ImageTk.PhotoImage(img)
         self.text.image_create(tk.INSERT, padx=5, pady=5, image=img)
         self.text.images.append(img)  # Keep a reference.
-        self.text.insert(tk.INSERT, '\n')
+        self.text.insert(tk.INSERT, "\n")
         if screenshot_file.suffix in self.image_file_extensions:
-            self.text.insert(tk.INSERT, screenshot_file.name+'\n')
+            self.text.insert(tk.INSERT, screenshot_file.name + "\n")
             self.text.image_filenames.append(screenshot_file)
 
     def add_action(self, action: ActionUI):
@@ -277,10 +305,19 @@ class ActionForm:
         self.text.insert(tk.INSERT, f"\n{str(action)}")
 
     def write_to_file(self):
-        with open("teste.json", "w") as f:
-            aux_ist = [x.to_dict() for x in self.actions_list]
-            json_file = dict(steps=aux_ist)
-            f.write(json.dumps(json_file))
+        file = fd.asksaveasfilename(
+            parent=self.root,
+            initialdir=os.getcwd(),
+            title="Save as",
+            filetypes=self.my_filetypes2,
+        )
+        if file:  # user selected file
+            with open(file, "w") as f:
+                aux_ist = [x.to_dict() for x in self.actions_list]
+                json_file = dict(steps=aux_ist)
+                f.write(json.dumps(json_file))
+        else:  # user cancel the file browser window
+            print("No file chosen")
 
     def read_macro(self):
         if self.playing:
@@ -296,21 +333,23 @@ class ActionForm:
             # READ
             with open(self.macro_filename, "r") as f:
                 self.macro = json.loads(f.read())
-                #self.actions_list = [x for x in self.macro["steps"]]
+                # self.actions_list = [x for x in self.macro["steps"]]
                 for x in self.macro["steps"]:
                     obj = ActionMap.map(x)
                     self.actions_list.append(obj)
-                    
+
                     if isinstance(obj, AcScreenshot):
                         img_path = Path(obj.ss_filepath)
-                        img = Image.open(img_path).resize((64, 64), Image.Resampling.LANCZOS)
+                        img = Image.open(img_path).resize(
+                            (64, 64), Image.Resampling.LANCZOS
+                        )
                         img = ImageTk.PhotoImage(img)
                         self.text.image_create(tk.INSERT, padx=5, pady=5, image=img)
                         self.text.images.append(img)  # Keep a reference.
                         if img_path.suffix in self.image_file_extensions:
-                            self.text.insert(tk.INSERT, img_path.name+'\n')
+                            self.text.insert(tk.INSERT, img_path.name + "\n")
                             self.text.image_filenames.append(img_path)
-                            
+
                     self.text.insert(tk.INSERT, f"{str(obj)}\n")
         else:
             showerror(title="No file selected yet.", message="File not Loaded.")
@@ -323,16 +362,18 @@ class ActionForm:
             # after all iterations
             if self.cnt > self.iterations:
                 break
+            print(f"macro cnt {self.cnt}/{self.iterations}")
             for a in self.actions_list:
                 if isinstance(a, AcScreenshot):
-                    action_gui.find_image_click(a.ss_filepath,a.button, self.speed, pyautogui.easeInBack)
+                    action_gui.find_image_click(
+                        a.ss_filepath, a.button, self.speed, pyautogui.easeInBack
+                    )
                 if isinstance(a, MyClick):
                     action_gui.go_click(a.x, a.y, self.speed, pyautogui.easeInBack)
                 if isinstance(a, AcWait):
                     action_gui.wait(5)
-                
+
             self.cnt += 1
-            print(f"macro cnt {self.cnt}/{self.iterations}")
         time.sleep(0.5)
         self.playing = False
         self.reset_cnt()  # reset

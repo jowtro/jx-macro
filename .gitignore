@@ -130,5 +130,5 @@ dmypy.json
 .pyre/
 lab
 *.json
-*.png
-*.jpg
+macro/*.jpg
+macro/*.png
