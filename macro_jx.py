@@ -388,7 +388,7 @@ class ActionForm(SettingsUI):
                         a.x, a.y, self.conf["settings"]["speed"], pyautogui.easeInBack
                     )
                 if isinstance(a, AcWait):
-                    action_gui.wait(5)
+                    action_gui.wait(a.wait)
 
             self.cnt += 1
         time.sleep(0.5)
