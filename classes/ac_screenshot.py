@@ -6,6 +6,7 @@ class AcScreenshot(ActionUI):
         super().__init__(name="FindImgClick")
         self.button = button
         self.ss_filepath = filepath
-
+        self.loop = False
+        
     def __str__(self) -> str:
         return f"Find Image and Click: {self.ss_filepath}s"

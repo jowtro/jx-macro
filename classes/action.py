@@ -7,9 +7,10 @@ from helper.file_helper import parse_path
 
 class Action(Macro):
 
-    def __init__(self, name="mining"):
+    def __init__(self, form, name="mining"):
         super().__init__()
         self.name = name
+        self.form = form
 
     @staticmethod
     def move_to(pos_x, pos_y, time=1, style=pyautogui.easeInSine):
@@ -82,6 +83,18 @@ class Action(Macro):
                 Action.go_click(pos_x,pos_y,time,style)
             case "right":
                 Action.go_right_click(pos_x,pos_y,time,style)
+                
+    def find_image_click_all(self, image_path:str, button:str,time:int, style:str):
+        while self.form.playing:
+            pos_x, pos_y = imagesearch(parse_path(image_path))
+            if pos_x == -1 and pos_y == -1:
+                return None
+            print("found another image.")
+            match button:
+                case "left":
+                    Action.go_click(pos_x,pos_y,time,style)
+                case "right":
+                    Action.go_right_click(pos_x,pos_y,time,style)
                 
     @staticmethod
     def wait(seconds: int):

@@ -9,39 +9,32 @@ from tkinter import ttk
 from tkinter import simpledialog
 from tkinter.messagebox import showerror, showinfo
 from tkinter.scrolledtext import ScrolledText
+import tomllib
 from PIL import Image, ImageTk
 from typing import List
 
 import pyautogui
 from pynput import keyboard, mouse
 from classes.ac_screenshot import AcScreenshot
+from classes.ac_screenshot_all import AcScreenshotAll
 from classes.ac_wait import AcWait
 
 from classes.action import Action
 from classes.action_ui import ActionUI
 from classes.my_click import MyClick
+from classes.settings_ui import SettingsUI
 from helper.file_helper import parse_path
 from mapper.action_map import ActionMap
 
 
-class ActionForm:
+class ActionForm(SettingsUI):
     def __init__(self) -> None:
-        self.action_str = None
-        self.actions_list = []
-        self.no_steps = 0
-        self.macro = None
-        self.btn_save = None
-        self.macro_filename = None
-        self.record = False
-        self.playing = False
-        self.cnt = 1
-        self.iterations = 2
-        self.speed = 0.5
+        super().__init__()
         self.root = tk.Tk(className="JXTECH")
         self.root.resizable(False, False)
         self.image_file_extensions = {".jpg", ".png"}
         if os.name == "nt":
-            self.root.geometry("520x245")
+            self.root.geometry("525x245")
         else:
             self.root.geometry("635x255")
         self.my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
@@ -65,18 +58,23 @@ class ActionForm:
         # Settings Tab
         settings_panel = tk.PanedWindow(settings_tab, background="#CCCCCC")
         settings_btn_panel = tk.PanedWindow(settings_tab, background="#CCCCCC")
-        settings_tab.grid_rowconfigure(1, weight=1)
+        settings_tab.grid_rowconfigure(2, weight=1)
         settings_tab.grid_columnconfigure(2, weight=1)
+        settings_panel.grid_rowconfigure(2, weight=1)
+        settings_panel.grid_columnconfigure(2, weight=1)
         btn_save_settings = ttk.Button(
-            settings_tab, text="Save Settings", command=lambda: print("Save Settings")
+            settings_tab, text="Save Settings", command=self.tk_save_settings
         )
-        btn_save_settings.grid(
-            column=0,
-            row=0,
-            sticky=tk.S,
-        )
-        lbl_ite = tk.Label(settings_panel, text="Iterations")
-        txt_iter = tk.Entry(settings_panel)
+        btn_save_settings.grid(column=0, row=0, sticky=tk.S)
+        self.lbl_ite = tk.Label(settings_panel, text="Iterations")
+        self.txt_iter_val = tk.StringVar(value=self.conf["settings"]["iterations"])
+        self.txt_iter = tk.Entry(settings_panel, textvariable=self.txt_iter_val)
+        self.txt_speed_val = tk.StringVar(value=self.conf["settings"]["speed"])
+        self.lbl_speed = tk.Label(settings_panel, text="Speed")
+        self.txt_speed = tk.Entry(settings_panel, textvariable=self.txt_speed_val)
+        self.lbl_speed.grid(column=0, row=1, sticky=tk.S)
+        self.txt_speed.grid(column=1, row=1, sticky=tk.S)
+        # end settings
 
         # panel
         top_pane = tk.PanedWindow(macro_tab, background="#99fb99")
@@ -89,18 +87,17 @@ class ActionForm:
         self.text.image_filenames = []
         self.text.images = []
 
-        lbl_speed = tk.Label(macro_tab, text="Cursor speed")
-        current_value = tk.StringVar(value=0)
-        spin_box = ttk.Spinbox(
-            self.root, from_=0, to=30, textvariable=current_value, wrap=True
-        )
-
         # endregion
 
         # region buttons
         btn_wait = tk.Button(macro_tab, text="Wait", command=self.tk_add_wait)
         btn_find_img = tk.Button(
             macro_tab, text="Find image and Click", command=self.tk_add_screenshot
+        )
+        btn_find_img_loop = tk.Button(
+            macro_tab,
+            text="Find image and Click Loop",
+            command=lambda: self.tk_add_screenshot(True),
         )
         # BTN SAVE
         btn_save = ttk.Button(
@@ -153,17 +150,18 @@ class ActionForm:
         # endregion
 
         # SETTINGS PANEL
-        settings_panel.add(lbl_ite)
-        settings_panel.add(txt_iter)
-        #btn panel
+        settings_panel.add(self.lbl_ite)
+        settings_panel.add(self.txt_iter)
+        settings_panel.add(self.lbl_speed)
+        settings_panel.add(self.txt_speed)
+        # btn panel
         settings_btn_panel.add(btn_save_settings)
         # add widgets to the panes
         top_pane.add(self.text)
 
-        right_pane.add(lbl_speed)
-        right_pane.add(spin_box)
         right_pane.add(btn_wait)
         right_pane.add(btn_find_img)
+        right_pane.add(btn_find_img_loop)
         top_pane.add(right_pane)
 
         bottom_pane.add(btn_save)
@@ -184,6 +182,7 @@ class ActionForm:
         right_pane.grid(row=0, column=1, sticky="ne", padx=5, pady=5)
         main.grid(row=1, column=0, sticky="nsew")
 
+        # INPUT LISTENERS
         keyboard_listener = keyboard.Listener(on_release=self.on_release)
         keyboard_listener.start()
         mouse_listener = mouse.Listener(on_click=self.on_click)
@@ -258,7 +257,7 @@ class ActionForm:
         acwait = AcWait(secs)
         self.add_action(acwait)
 
-    def tk_add_screenshot(self):
+    def tk_add_screenshot(self, loop=False):
         file_dialog = fd.askopenfilename(
             parent=self.root,
             initialdir=os.getcwd(),
@@ -284,7 +283,11 @@ class ActionForm:
                 parent=self.root,
             )
 
-        ac_ss = AcScreenshot(str(screenshot_file), button)
+        ac_ss = (
+            AcScreenshot(str(screenshot_file), button)
+            if not loop
+            else AcScreenshotAll(str(screenshot_file), button)
+        )
         self.add_action(ac_ss)
 
         # Add image to Scrolltext
@@ -357,19 +360,33 @@ class ActionForm:
 
     def play_macro(self):
         self.record = False
-        action_gui = Action()
+        action_gui = Action(self)
         while self.playing:
             # after all iterations
-            if self.cnt > self.iterations:
+            if self.cnt > self.conf["settings"]["iterations"]:
                 break
-            print(f"macro cnt {self.cnt}/{self.iterations}")
+            print(
+                "macro cnt {}/{}".format(self.cnt, self.conf["settings"]["iterations"])
+            )
             for a in self.actions_list:
                 if isinstance(a, AcScreenshot):
                     action_gui.find_image_click(
-                        a.ss_filepath, a.button, self.speed, pyautogui.easeInBack
+                        a.ss_filepath,
+                        a.button,
+                        self.conf["settings"]["speed"],
+                        pyautogui.easeInBack,
+                    )
+                if isinstance(a, AcScreenshotAll):
+                    action_gui.find_image_click_all(
+                        a.ss_filepath,
+                        a.button,
+                        self.conf["settings"]["speed"],
+                        pyautogui.easeInBack,
                     )
                 if isinstance(a, MyClick):
-                    action_gui.go_click(a.x, a.y, self.speed, pyautogui.easeInBack)
+                    action_gui.go_click(
+                        a.x, a.y, self.conf["settings"]["speed"], pyautogui.easeInBack
+                    )
                 if isinstance(a, AcWait):
                     action_gui.wait(5)
 
