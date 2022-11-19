@@ -9,4 +9,4 @@ class MyClick(MouseUI):
         self.is_pressed = pressed
 
     def __str__(self) -> str:
-        return f"Click [{str(self.x)},{str(self.y)}]"
+        return f"Click<{self.button}> [{str(self.x)},{str(self.y)}]"

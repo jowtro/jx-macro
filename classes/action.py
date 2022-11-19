@@ -1,23 +1,21 @@
 from classes.macro import Macro
 import pyautogui
-from python_imagesearch.imagesearch import imagesearch, click_image
-
+from pyautogui import Point
 from helper.file_helper import parse_path
 
 
 class Action(Macro):
-
     def __init__(self, form, name="mining"):
         super().__init__()
         self.name = name
         self.form = form
 
     @staticmethod
-    def move_to(pos_x, pos_y, time=1, style=pyautogui.easeInSine):
+    def move_to(pos_x: int, pos_y: int, time=1, style=pyautogui.easeInSine):
         pyautogui.moveTo(pos_x, pos_y, time, style)
 
     @staticmethod
-    def go_click(pos_x, pos_y, time, style):
+    def go_click(pos_x: int, pos_y: int, time: float, button: str, style):
         """move the mouse to the pos and click
 
         Args:t
@@ -26,24 +24,11 @@ class Action(Macro):
             time ([int]): eg:. 2 seconds
             style ([pyautogui.function]): eg:.pyautogui.easeInBack
         """
-        pyautogui.moveTo(pos_x+5, pos_y+5, time, style)
-        pyautogui.click()
+        pyautogui.moveTo(pos_x + 5, pos_y + 5, time, style)
+        pyautogui.click() if button == "left" else pyautogui.rightClick()
 
     @staticmethod
-    def go_right_click(pos_x, pos_y, time, style):
-        """move the mouse to the pos and click
-
-        Args:t
-            pos_x ([int]): x pos
-            pos_y ([int]): y pos
-            time ([int]): eg:. 2 seconds
-            style ([pyautogui.function]): eg:.pyautogui.easeInBack
-        """
-        pyautogui.moveTo(pos_x, pos_y, time, style)
-        pyautogui.rightClick()
-
-    @staticmethod
-    def find_image(image_path):
+    def find_image(image_path: str, min_time=2):
         """Find an image on screen
 
         Args:
@@ -52,11 +37,15 @@ class Action(Macro):
         Returns:
             list[int]: [x,y]
         """
-        pos = imagesearch(parse_path(image_path))
-        if pos[0] != -1:
-            return pos
-        else:
-            return None
+        try:
+            img = pyautogui.locateOnScreen(parse_path(image_path), min_time)
+            pos = pyautogui.center(img)
+            if pos is None:
+                return None
+            else:
+                return pos
+        except Exception as ex:
+            print("Image not Found")
 
     @staticmethod
     def has_found_img(pos):
@@ -64,9 +53,10 @@ class Action(Macro):
             return True
         else:
             return False
-        
-    @staticmethod
-    def find_image_click(image_path:str, button:str,time:int, style:str):
+
+    def find_image_click(
+        self, image_path: str, button: str, time: float, style=pyautogui.easeInBack
+    ):
         """Find an image on screen
 
         Args:
@@ -75,28 +65,22 @@ class Action(Macro):
         Returns:
             list[int]: [x,y]
         """
-        pos_x, pos_y = imagesearch(parse_path(image_path))
-        if pos_x == -1:
+        pos = Action.find_image(parse_path(image_path), time)
+        if pos is None:
             return None
-        match button:
-            case "left":
-                Action.go_click(pos_x,pos_y,time,style)
-            case "right":
-                Action.go_right_click(pos_x,pos_y,time,style)
-                
-    def find_image_click_all(self, image_path:str, button:str,time:int, style:str):
+
+        Action.go_click(pos.x, pos.y, time, button, style)
+
+    def find_image_click_all(
+        self, image_path: str, button: str, time: float, style=pyautogui.easeInBack
+    ):
         while self.form.playing:
-            pos_x, pos_y = imagesearch(parse_path(image_path))
-            if pos_x == -1 and pos_y == -1:
+            pos = self.find_image(image_path)
+            if pos is None:
                 return None
             print("found another image.")
-            match button:
-                case "left":
-                    Action.go_click(pos_x,pos_y,time,style)
-                case "right":
-                    Action.go_right_click(pos_x,pos_y,time,style)
-                
+            Action.go_click(pos.x, pos.y, time, button, style)
+
     @staticmethod
-    def wait(seconds: int):
+    def wait(seconds: float):
         pyautogui.sleep(seconds)
-        
