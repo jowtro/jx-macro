@@ -39,7 +39,7 @@ class ActionForm(SettingsUI):
         if os.name == "nt":
             self.root.geometry("525x245")
         else:
-            self.root.geometry("555x255")
+            self.root.geometry("590x255")
         self.my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
         self.my_filetypes2 = [("JSON format", ".json")]
         self.img_stop_record = PhotoImage(file=parse_path("./assets/stop_record.png"))
