@@ -1,6 +1,17 @@
-# jx-escape-macro
+# jx-macro
+
+A program that emulates clicks and mouse moves, no keyboard supported yet.
 
 
-note: need Windows in order to run.
+## Requirements
 
-A simple macro for mining in runescape.
+    Python 3.11
+    Tk lib
+    Tix lib
+    
+## On Arch
+    sudo pacman -S tk
+    yay -S tix
+
+
+
