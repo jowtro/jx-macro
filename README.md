@@ -23,6 +23,7 @@ A program that record macro and play macros, no keyboard supported yet.
 **OS Libraries (linux)**
 * Tk
 * Tix
+* scrot
     
 ## Required System Libs on Arch
 ### find the equivalent lib on your Linux distribution
