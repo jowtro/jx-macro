@@ -24,9 +24,12 @@ A program that record macro and play macros, no keyboard supported yet.
 * Tk
 * Tix
     
-## System Libs on Arch
-        sudo pacman -S tk
-        yay -S tix
+## Required System Libs on Arch
+### find the equivalent lib on your Linux distribution
+
+        $ sudo pacman -S tk
+        $ yay -S tix
+        $ sudo pacman -S scrot
 
 
 
