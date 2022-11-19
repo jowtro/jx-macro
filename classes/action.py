@@ -28,7 +28,7 @@ class Action(Macro):
         pyautogui.click() if button == "left" else pyautogui.rightClick()
 
     @staticmethod
-    def find_image(image_path: str, min_time=2):
+    def find_image(image_path: str, min_time=0):
         """Find an image on screen
 
         Args:
