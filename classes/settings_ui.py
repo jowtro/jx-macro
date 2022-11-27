@@ -16,7 +16,7 @@ class SettingsUI:
         self.record = False
         self.playing = False
         self.cnt = 1
-        self.wait_flag = False
+        self.wait_flag = True
         self.last_ac_time = 0
         self.last_ac_elapsed_time = 0
         self.tk_load_settings()

@@ -37,9 +37,9 @@ class ActionForm(SettingsUI):
         self.root.resizable(False, False)
         self.image_file_extensions = {".jpg", ".png"}
         if os.name == "nt":
-            self.root.geometry("525x245")
+            self.root.geometry("525x255")
         else:
-            self.root.geometry("590x255")
+            self.root.geometry("590x275")
         self.my_filetypes = [("png format", ".png"), ("jpeg format", ".jpg")]
         self.my_filetypes2 = [("JSON format", ".json")]
         self.img_stop_record = PhotoImage(file=parse_path("./assets/stop_record.png"))
@@ -80,9 +80,14 @@ class ActionForm(SettingsUI):
         self.txt_speed.grid(column=1, row=1, sticky=tk.S)
         # toggle button for auto wait
         # Define Our Images
-        self.img_wait_on = PhotoImage(file = parse_path("assets/on.png"))
-        self.img_wait_off = PhotoImage(file = parse_path("assets/off.png"))
-        self.btn_wait_tgl = Button(self.root, image = self.img_wait_off, bd = 0,
+        #Load the image
+        raw_img_on = Image.open(parse_path("assets/on.png")).resize((60,25), Image.ANTIALIAS)
+        raw_img_off = Image.open(parse_path("assets/off.png")).resize((60,25), Image.ANTIALIAS)
+        
+        #Resize the Image
+        self.img_wait_on = ImageTk.PhotoImage(raw_img_on)
+        self.img_wait_off = ImageTk.PhotoImage(raw_img_off)
+        self.btn_wait_tgl = Button(self.root,text="Auto Wait",compound= tk.LEFT, image = self.img_wait_on if self.wait_flag else self.img_wait_off, bd = 0,
                    command = self.tk_toggle_wait)
         # end settings
 
