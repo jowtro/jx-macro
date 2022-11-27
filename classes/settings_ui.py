@@ -16,9 +16,12 @@ class SettingsUI:
         self.record = False
         self.playing = False
         self.cnt = 1
-        self.load_settings()
+        self.wait_flag = False
+        self.last_ac_time = 0
+        self.last_ac_elapsed_time = 0
+        self.tk_load_settings()
 
-    def load_settings(self):
+    def tk_load_settings(self):
         try:
             with open(parse_path("./settings.toml"), "r") as f:
                 self.conf = toml.load(f)

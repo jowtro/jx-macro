@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import time
 import tkinter as tk
-from tkinter import BOTH, END, WORD, Image, PhotoImage
+from tkinter import BOTH, END, WORD, Button, Image, PhotoImage
 from tkinter import filedialog as fd
 from tkinter import ttk
 from tkinter import simpledialog
@@ -78,6 +78,12 @@ class ActionForm(SettingsUI):
         self.txt_speed = tk.Entry(settings_panel, textvariable=self.txt_speed_val)
         self.lbl_speed.grid(column=0, row=1, sticky=tk.S)
         self.txt_speed.grid(column=1, row=1, sticky=tk.S)
+        # toggle button for auto wait
+        # Define Our Images
+        self.img_wait_on = PhotoImage(file = parse_path("assets/on.png"))
+        self.img_wait_off = PhotoImage(file = parse_path("assets/off.png"))
+        self.btn_wait_tgl = Button(self.root, image = self.img_wait_off, bd = 0,
+                   command = self.tk_toggle_wait)
         # end settings
 
         # panel
@@ -161,7 +167,7 @@ class ActionForm(SettingsUI):
         #Bind the tooltip with button
         tip.bind_widget(btn_play,balloonmsg="To stop a running macro press ESC.")
         
-        # SETTINGS PANEL
+        # SETTINGS TAB
         settings_panel.add(self.lbl_ite)
         settings_panel.add(self.txt_iter)
         settings_panel.add(self.lbl_speed)
@@ -170,7 +176,7 @@ class ActionForm(SettingsUI):
         settings_btn_panel.add(btn_save_settings)
         # add widgets to the panes
         top_pane.add(self.text)
-
+        right_pane.add(self.btn_wait_tgl)
         right_pane.add(btn_wait)
         right_pane.add(btn_find_img)
         right_pane.add(btn_find_img_loop)
@@ -201,6 +207,16 @@ class ActionForm(SettingsUI):
         mouse_listener = mouse.Listener(on_click=self.on_click)
         mouse_listener.start()
 
+    def tk_toggle_wait(self):
+        # Determine is on or off
+        if self.wait_flag:
+            self.btn_wait_tgl.config(image = self.img_wait_off)
+            self.wait_flag = False
+        else:
+        
+            self.btn_wait_tgl.config(image = self.img_wait_on)
+            self.wait_flag = True
+    
     def inc_steps(self):
         """increment steps by 1"""
         self.no_steps += 1
@@ -224,6 +240,8 @@ class ActionForm(SettingsUI):
 
         if not self.record:
             return
+        
+        
         wndx, wndy = self.root.winfo_rootx(), self.root.winfo_rooty()
         wnd_w = self.root.winfo_width()
         wnd_h = self.root.winfo_height()
@@ -231,6 +249,15 @@ class ActionForm(SettingsUI):
         if x > wndx and x < (wndx + wnd_w) and y > wndy and y < (wndy + wnd_h):
             return
 
+        if self.wait_flag and len(self.actions_list) > 0:
+            # elapsed action time
+            self.last_ac_elapsed_time = time.monotonic() - self.last_ac_time
+            self.add_action(AcWait(self.last_ac_elapsed_time))
+        
+        # each action log time
+        self.last_ac_time = time.monotonic()
+        
+        
         print("add to list")
         click = MyClick(x, y, button, pressed)
         self.add_action(click)
