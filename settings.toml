@@ -1,3 +1,3 @@
 [settings]
-iterations = 1
-speed = 0.5
+iterations = 30
+speed = 0.1

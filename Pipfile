@@ -31,6 +31,7 @@ pytweening = "*"
 six = "*"
 toml = "*"
 wrapt = "*"
+pyinstaller = "*"
 
 [dev-packages]
 black = "*"
