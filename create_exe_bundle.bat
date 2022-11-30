@@ -3,6 +3,8 @@ pyinstaller -F --onefile --add-data C:\Python311\tcl\tix8.4.3;tcl\tix8.4.3 macro
 
 REM NOW mo to the dest folder
 cp -R assets dist\
+cp settings.toml dist\
+
 mkdir dist\macro
 
 ECHO Running macro_jx.exe
